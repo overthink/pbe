@@ -1,0 +1,14 @@
+---
+layout: default
+title: Home
+---
+
+{% for post in site.posts limit:5 %}
+<div class="post">
+  <h1>{{ post.title }}</h1>
+  {{post.content}}
+  <div><a href="{{ post.url }}">Permalink</a></div>
+</div>
+{% endfor %}
+
+End.
