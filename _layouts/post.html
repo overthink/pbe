@@ -1,6 +1,28 @@
 ---
 layout: default
 ---
-
-<article>{{ content }}</article>
+<div class="article">
+  <h1>{{ page.title }}</h1>
+  <p>
+    <time class="signoff" datetime="{{ page.date | date: "%Y-%m-%d" }}">
+      {{ page.date | date: "%b %d, %Y" }}
+    </time>
+  </p>
+  {{content}} 
+</div>
+<!--
+<article>
+  <header>
+    <h1 style="display: inline; cursor: auto">{{ page.title }}</h1>
+    <p>
+      <time class="signoff" datetime="{{ page.date | date: "%Y-%m-%d" }}">
+        {{ page.date | date: "%b %d, %Y" }}
+      </time>
+    </p>
+  </header>
+  <section>
+    {{ content }}
+  </section>
+</article>
+-->
 

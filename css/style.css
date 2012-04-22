@@ -36,15 +36,6 @@ html, button, input, select, textarea { font-family: sans-serif; color: #222; }
 
 body { margin: 0; font-size: 1em; line-height: 1.4; }
 
-/*
- * Remove text-shadow in selection highlight: h5bp.com/i
- * These selection declarations have to be separate
- * Also: hot pink! (or customize the background color to match your design)
- */
-
-::-moz-selection { background: #fe57a1; color: #fff; text-shadow: none; }
-::selection { background: #fe57a1; color: #fff; text-shadow: none; }
-
 
 /* =============================================================================
    Links
@@ -218,14 +209,92 @@ td { vertical-align: top; }
    Author: Mark Feeney
    ========================================================================== */
 
+/* 
+ Colour scheme: http://colorschemedesigner.com/#0X21T1hP.vyw0 
+ Reasonable CSS indenting style stolen from: http://journal.stuffwithstuff.com/
+ */
+
 body {
-  font-family: 'Vollkorn', serif;
+  font: 400 16px 'PT Serif', serif;
+  text-align: justify;
+  line-height: 1;
+  color: #333333;
+  background-color: #fffdf9; }
+
+.wrapper {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 0 24;
 }
 
+p {
+  line-height: 1.5; }
 
+h1 a, h1 a:visited {
+  text-decoration: none;
+  color: #333333; }
 
+div.highlight { 
+  padding: 1em 1.5em;
+  width: 90%;
+  margin: auto;
+  background-color: #333;
+  border-radius: 11px; 
+  -moz-border-radius: 11px; 
+  -webkit-border-radius: 11px; 
+  border: 1px solid #D9DBE1;
+  font: normal 13px 'Ubuntu Mono', monospace; }
 
+#header-container {
+  margin: 0;
+  padding: 8px 0 12px 0;
+  background-color: #C0BEBA; }
+  #header-container h1 {
+    font: 400 36px 'Alfa Slab One', sans-serif; 
+    text-shadow: 1px 1px 1px #888;
+    margin: 0; }
+    #header-container h1 a, #header-container h1 a:visited {
+      text-decoration: none;
+      color: #333333; }
+  #header-container h2 {
+    font: 400 18px 'Alfa Slab One', sans-serif;
+    color: #444;
+    border-bottom: 1px solid #333;
+    padding: 0 0 2px 0;
+    margin: 0; }
 
+#main-container {
+  margin: 0;
+  padding: 18px 0; }
+
+#footer-container {
+  color: #555;
+  margin: 3em 0 0 0;
+  padding: 1.5em 0 1em;
+  font-size: 13px;
+  background-color: #C0BEBA; }
+  #footer-container dt {
+    float: left;
+    clear: left;
+    width: 6em;
+    padding: 0 0.5em 0 0;
+    text-align: right;
+    xfont-weight: bold;
+    font-family: 'Alfa Slab One', sans-serif;
+    xcolor: #444; }
+  #footer-container dd {
+    padding-bottom: 0.6em;
+    margin: 0 0 0 6.5em; }
+  #footer-container dt:after {
+    xcontent: ":"; }
+  #footer-container p {
+    padding: 0;
+    margin: 0; }
+  #footer-container a {
+    color: #485f93; }
+  #footer-container #copyright {
+    text-align: center;
+    margin-top: 2em; }
 
 /* ==|== media queries ======================================================
    EXAMPLE Media Query for Responsive Design.
