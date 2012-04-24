@@ -1,3 +1,6 @@
+meta:
+    absolute_baseurl: http://proofbyexample.com
+
 auto: true
 server: true
 pygments: true

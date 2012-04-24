@@ -255,7 +255,7 @@ div.highlight {
     margin: 0; }
     #header-container h1 a, #header-container h1 a:visited {
       text-decoration: none;
-      color: #333333; }
+      color: #333; }
   #header-container h2 {
     font: 400 18px 'Alfa Slab One', sans-serif;
     color: #444;
@@ -266,6 +266,20 @@ div.highlight {
 #main-container {
   margin: 0;
   padding: 18px 0; }
+  #main-container .article a {
+    color: #A78A51; }
+    #main-container .article a:hover {
+      color: red; }
+  #main-container .article h1 {
+    margin-bottom: 0;
+    padding: 0; }
+    #main-container .article h1 a, #main-container .article h1 a:visited {
+      text-decoration: none;
+      color: #333; }
+  #main-container #post-date {
+    font-style: italic;
+    font-size: 0.9em;
+    margin-top: 0; }
 
 #footer-container {
   color: #555;
@@ -292,6 +306,8 @@ div.highlight {
     margin: 0; }
   #footer-container a {
     color: #485f93; }
+    #footer-container a:hover {
+      color: red; }
   #footer-container #copyright {
     text-align: center;
     margin-top: 2em; }
