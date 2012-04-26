@@ -5,5 +5,5 @@ auto: true
 server: true
 pygments: true
 permalink: /:title.html
-engine: kramdown
+markdown: kramdown
 
