@@ -245,6 +245,13 @@ div.highlight {
   border: 1px solid #D9DBE1;
   font: normal 13px 'Ubuntu Mono', monospace; }
 
+dl {
+  margin: 0 1em; }
+dt {
+  font-weight: bold; }
+dd {
+  padding: 0 0 0.5em 0; }
+
 #header-container {
   margin: 0;
   padding: 8px 0 12px 0;
