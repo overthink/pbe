@@ -217,7 +217,7 @@ td { vertical-align: top; }
 body {
   font: 400 16px 'PT Serif', serif;
   text-align: justify;
-  line-height: 1;
+  line-height: 1.2;
   color: #333333;
   background-color: #fffdf9; }
 
@@ -226,9 +226,6 @@ body {
   margin: 0 auto;
   padding: 0 24;
 }
-
-p {
-  line-height: 1.5; }
 
 h1 a, h1 a:visited {
   text-decoration: none;
@@ -244,6 +241,9 @@ div.highlight {
   -webkit-border-radius: 11px; 
   border: 1px solid #D9DBE1;
   font: normal 13px 'Ubuntu Mono', monospace; }
+
+code {
+  font-size: 0.8em; }
 
 dl {
   margin: 0 1em; }
