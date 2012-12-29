@@ -216,7 +216,7 @@ td { vertical-align: top; }
 
 body {
   font: 400 16px 'PT Serif', serif;
-  text-align: justify;
+  xtext-align: justify;
   line-height: 1.2;
   color: #333333;
   background-color: #fffdf9; }
@@ -273,6 +273,11 @@ dd {
 #main-container {
   margin: 0;
   padding: 18px 0; }
+  #main-container .article img {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 1.5em 0; }
   #main-container .article a {
     color: #A78A51; }
     #main-container .article a:hover {
