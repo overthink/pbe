@@ -1,6 +1,7 @@
 ---
 layout: post
 title: Clojure Protocols & Multimethods
+published: false
 ---
 
 This article is about Clojure's [multimethods](http://clojure.org/multimethods) and [protocols](http://clojure.org/protocols): what they are, how they work, and when you might want to use them.  The "when" part has always tripped me up -- especially with multimethods.  I'll look at some code from projects in the wild to help gain some intuition.

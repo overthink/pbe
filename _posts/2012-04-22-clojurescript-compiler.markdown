@@ -1,6 +1,7 @@
 ---
 layout: post
 title: A Look at the ClojureScript Project
+published: false
 ---
 
 ## Intro
