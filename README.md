@@ -2,11 +2,11 @@
 
 ## Setup
 
+* `sudo apt-get install libxml2-dev libxslt-dev` (nokogiri, required by jekyll, needs these)
 * Install rvm: https://rvm.io/
+* `rvm install 1.9.3`
 * `rvm use 1.9.3`
-* `gem install jekyll`
-* `gem install kramdown`
-* `gem install jekyll-s3` 
+* `gem install jekyll kramdown jekyll-s3`
 
 ## Dev
 
