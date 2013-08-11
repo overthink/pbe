@@ -1,16 +1,14 @@
 # proofbyexample.com
 
-## Setup
+## Setup (Ubuntu 12.04)
 
+* `sudo apt-get install ruby1.9.3`
 * `sudo apt-get install libxml2-dev libxslt-dev` (nokogiri, required by jekyll, needs these)
-* Install rvm: https://rvm.io/
-* `rvm install 1.9.3`
-* `rvm use 1.9.3`
-* `gem install jekyll kramdown jekyll-s3`
+* `sudo gem install jekyll kramdown jekyll-s3`
 
 ## Dev
 
-* Run `jekyll` (`_config.yml` should have all the right settings) to have a local server to work against
+* Run `jekyll serve -w` to run a local server to work against (`-w` watches for changes)
 
 ## Deploy
 
