@@ -1,6 +1,7 @@
 ---
 layout: post
 title: Second Post
+published: false
 ---
 
 {% highlight scala %}
