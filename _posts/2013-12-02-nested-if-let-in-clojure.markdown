@@ -89,3 +89,5 @@ pulling it in.
 I find it odd that there's not a common idiom in the "standard libarary" for
 this.  Maybe I just haven't been searching for the right thing.
 
+**Update 2013-12-12**: [solution to this same problem in Scala]({% post_url 2013-12-12-combining-option-and-either-in-scala %}).
+
