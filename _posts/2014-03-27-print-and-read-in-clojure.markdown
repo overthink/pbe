@@ -3,17 +3,22 @@ layout: post
 title: Print and read in Clojure
 ---
 
-I recently had a situation where I needed a dumb cache for some data that took
-forever to come back from a slow external API.  My requirements:
+I recently had a situation where I needed a very light-weight cache for some
+data that took forever to come back from a slow external API.  My requirements:
 
 * cached data must outlive current process, i.e. be written to disk
-* cache should throw at write time if the thing being written won't be readable later
+* cache must throw at write time if the thing being written won't be readable
+  when we need it
 * it's ok to let `read` evaluate code (i.e. trust values from the disk cache)
+* no databases, bloated dependencies, just quick and dirty
 
 Given that I was using Clojure, I figured this would be extremely easy given
 the Lisp dream of pervasive print/read to/from textual forms.  The high-level
-implementation is use `pr` to print values to a text file, and `read` to read
-values back into memory.  I encountered some rough edges in Clojure's
+implementation is use
+[`pr`](http://clojure.github.io/clojure/clojure.core-api.html#clojure.core/pr)
+to print values to a text file, and
+[`read`](http://clojure.github.io/clojure/clojure.core-api.html#clojure.core/read)
+to read values back into memory.  I encountered some rough edges in Clojure's
 print/read in doing this, however.
 
 ## Printing
@@ -33,12 +38,17 @@ happily print anything, even if it has no hope of being read back in. e.g. A
 ;;         clojure.core/read-string (core.clj:3427)
 {% endhighlight %}
 
+There's nothing special about `DateTime`, it's just my example.  No Java class
+(except a handful with special handling in Clojure) will have readable printed
+forms out of the box.  That's fine, but I do want to **know** when something
+I'm printing will not be readable.
+
 There is a solution to this though: the dynamic variable `*print-dup*`.  I
 assume `dup` is short for dupliacte?  First, background: The print-related core
 functions boil down to calls to
-(`pr-on`)[https://github.com/clojure/clojure/blob/201a0dd9701e1a0ee3998431241388eb4a854ebf/src/clj/clojure/core.clj#L3386-L3393]
-which calls the multi-method `print-method` in the usual case, or `print-dup`
-if `*print-dup*` is true.
+[`pr-on`](https://github.com/clojure/clojure/blob/201a0dd9701e1a0ee3998431241388eb4a854ebf/src/clj/clojure/core.clj#L3386-L3393)
+which calls the multimethod `print-method` in the usual case, or another
+multimethod `print-dup` if `*print-dup*` is true.  Here's the code:
 
 {% highlight clojure %}
 (defn pr-on
@@ -51,20 +61,21 @@ if `*print-dup*` is true.
   nil)
 {% endhighlight %}
 
-`print-method` has an implementation for
-(`java.lang.Object`)[https://github.com/clojure/clojure/blob/201a0dd9701e1a0ee3998431241388eb4a854ebf/src/clj/clojure/core_print.clj#L101-L102],
-which is why it will print anything.  `print-dup`, on the other hand has fewer
+`print-method` has an [implementation for
+`java.lang.Object`](https://github.com/clojure/clojure/blob/201a0dd9701e1a0ee3998431241388eb4a854ebf/src/clj/clojure/core_print.clj#L101-L102),
+which is why it is able to print anything.  `print-dup`, on the other hand has fewer
 stock methods, and will throw when you try to print something it doesn't
 explicitly know about.  This is what I wanted: if it won't be readable, blow
-up.  (Note my assumption here that if a type has a `print-dup` implementation
+up.  (Note my reasonable? assumption here that if a type has a `print-dup` implementation
 that it will be readable.)
 
 {% highlight clojure %}
 (binding [*print-dup* true] (pr-str (org.joda.time.DateTime.)))
-;; IllegalArgumentException No method in multimethod 'print-dup' for dispatch value: class org.joda.time.DateTime  clojure.lang.MultiFn.getFn (MultiFn.java:160)
+;; IllegalArgumentException No method in multimethod 'print-dup' for dispatch value:
+;; class org.joda.time.DateTime  clojure.lang.MultiFn.getFn (MultiFn.java:160)
 {% endhighlight %}
 
-So this is great, except to be useful -- at least to me -- certain non-Clojure
+This is great, except that to be useful -- at least for me -- certain non-Clojure
 objects, like joda's `DateTime` need to work with the cache.  Since `print-dup`
 is a multimethod, we can easily extend it for our uses.
 
@@ -82,31 +93,34 @@ Now the following works:
 "#=(org.joda.time.DateTime. 1395949236863)"
 {% endhighlight %}
 
-## *read-eval*
+## \*read-eval\*
 
-Note that I use `#=` in the output here.  This is an undocumented, but well
+Notice that I use `#=` in the output here.  This is an undocumented, but well
 used, reader macro that causes the following form to be evaluated after it is
-read (i.e. at read time), but only if *read-eval* is true (which it is by
+read (i.e. at read time), but only if `*read-eval*` is true (which it is by
 default).  This feels a bit scary on the surface -- an attacker could plant
 `#=(fire-missiles :now)` in the cached data -- but I'm accepting it.  In my
 case, a user that can modify the cached data already has the same access level
-as the program does.  See references below for some more on *read-eval* safety.
+as the program does.  See references below for some more on `*read-eval*` safety.
 
 In general, you need to ensure `*read-eval*` to read things printed by
 `print-dup`. Search for `defmethod print-dup`
 [here](https://github.com/clojure/clojure/blob/201a0dd9701e1a0ee3998431241388eb4a854ebf/src/clj/clojure/core_print.clj)
 to see how often it is used in the stock methods for `print-dup`.
 
+Things appear to be printing.  Now for the read side.
+
 ## Reading
 
-Most of the complexity I encoutnered was on the print side, so reading is pretty easy: just make sure `*read-eval*` is set:
+Most of the complexity I encountered was on the print side, so reading is
+pretty easy: just make sure `*read-eval*` is set:
 
 {% highlight clojure %}
-(binding [*read-eval* true] (read-string "#=(org.joda.time.DateTime. 1395949236863)"))
+(binding [*read-eval* true] (read-string (pr-str org.joda.time.DateTime.)))
 ;; #<DateTime 2014-03-27T15:40:36.863-04:00>
 {% endhighlight %}
 
-# y u do dis struct-map?
+## y u do dis struct-map?
 
 I wrote all this up, using `pr` and `read` to read/write files on disk, and
 started using it.  Right away things blew up: `IllegalArgumentException No
@@ -117,17 +131,21 @@ this sort of thing:
 #=(clojure.lang.PersistentStructMap/create {:a 1, :b 2})
 {% endhighlight %}
 
-`struct-map`.  Old, and largely replaced by records.  Who the hell uses struct
-maps?  I don't...?  er, But I do use `resultset-seq` extensively, and it
-returns struct maps.  These things get through the `print-dup` method because
-`PersistentStructMap` implements `IPersistentMap`, which is handled by
+[`struct-map`s](http://clojure.org/data_structures#Data%20Structures-StructMaps).
+Old, and largely replaced by records.  Who the hell uses struct maps?  I
+don't...?  er, But I do use
+[`resultset-seq`](http://clojure.github.io/clojure/clojure.core-api.html#clojure.core/resultset-seq)
+extensively, and it returns struct maps.  These things get through `print-dup`
+because `PersistentStructMap` implements `IPersistentMap`, which is handled by
 `print-dup`
 [here](https://github.com/clojure/clojure/blob/201a0dd9701e1a0ee3998431241388eb4a854ebf/src/clj/clojure/core_print.clj#L216).
-The fact that they can't be a read is an ancient bug that doesn't look likely
-to be fixed: [CLJ-176](http://dev.clojure.org/jira/browse/CLJ-176).  Ugh.  I
-found an easy work-around, and while it's not really in the spirit of
-`print-dup`, it works for me: convert struct maps to regular maps before
-printing:
+The fact that they can't be a read is an [ancient
+bug](http://dev.clojure.org/jira/browse/CLJ-176) that doesn't look likely to be
+fixed.  Ugh.
+
+I found an easy work-around, and while it's not really in the
+spirit of `print-dup`, it works for me: convert struct maps to regular maps
+before printing:
 
 {% highlight clojure %}
 ;; Convert struct maps into something readable before printing
@@ -138,12 +156,12 @@ printing:
 {% endhighlight %}
 
 I don't know if there are more instances of this type of thing (printable with
-print-dup, but not readable); I haven't found them yet, but this cache doesn't
-see a great variety of values.
+print-dup, but not readable); I haven't found any yet.  This cache doesn't see
+a great variety of values, however.
 
 ## tl;dr
 
-How to print and read anything:
+How to print things and be confident you can read them later:
 
 * bind `*print-dup*` to true at print time
 * add `print-dup` methods as necessary for your custom and 3rd party types
@@ -151,7 +169,8 @@ How to print and read anything:
 * set `*read-eval*` to true at read time
 
 References
+
 * [Don't use XML/JSON for Clojure-only persistence/messaging](http://amalloy.hubpages.com/hub/Dont-use-XML-JSON-for-Clojure-only-persistence-messaging)
 * [struct-maps aren't readable](http://dev.clojure.org/jira/browse/CLJ-176)
-* [*read-eval* safety discussion, decisions](https://groups.google.com/forum/#!topic/clojure/qUk-bM0JSGc)
+* [`*read-eval*` safety discussion, decisions](https://groups.google.com/forum/#!topic/clojure/qUk-bM0JSGc)
 
