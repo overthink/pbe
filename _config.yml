@@ -3,4 +3,8 @@ meta:
 pygments: true
 permalink: /:title.html
 markdown: kramdown
-
+exclude:
+  - serve
+  - publish
+  - README.md
+  - .gitignore
