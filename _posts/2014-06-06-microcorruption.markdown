@@ -17,9 +17,15 @@ worked, but the challenge is setup for beginners, so it was a great way to gain
 some insight.
 
 Below are my notes and solutions.  Do yourself a favour and actually do the
-challenge yourself!  It'll only take... tens of hours!  But it's well worth it.
+challenge yourself!  It'll only take... tens of hours!  But it's a lot of fun.
 
-### Tutorial
+## Answers
+
+Disclaimer: I don't know what I'm doing, as usual.  I passed each level, but my
+reasoning exposed in the writeups might be flawed. Feel free to enlighten me if
+you see problems.
+
+### Tutorial (10)
 
 Well, they lead you through this one.  In the `check_password` function you can
 see it incrementing a count in `r12` after each character of the password is
@@ -29,7 +35,7 @@ done.
 
 My answer: `aaaaaaaa` (any eight-char password)
 
-### New Orleans
+### New Orleans (10)
 
 The first thing done in `main` is a call to `create_password` which promptly
 puts the password into main memory at address `0x2400`.  Then you just look at
@@ -37,7 +43,7 @@ it.  Doesn't get a lot easier.
 
 My answer: `z99zlHo`
 
-### Sydney
+### Sydney (15)
 
 This one just compares the bytes in the entered password to a bunch of
 constants in code.  You can read the password right out of `check_password`.
@@ -50,10 +56,10 @@ bytes.  Same procedure for the next six bytes.
 
 My answer (hex): `2430426b5466706d`
 
-### Hanoi
+### Hanoi (20)
 
 What happens right before the call to `unlock_door` in the `login` procedure?
-Checking that the contents of a fixed address with the constant `0x3` (i.e.
+Checking that the contents of a fixed address are the constant `0x3` (i.e.
 `cmp.b #0x3, &0x2410`).  Working backwards I need to get `0x3` into address
 `0x2410`.  Fortunately, you can overflow the input here.  Passwords are stored
 starting at `0x2400` and while they're supposedly not to exceed 16 chars in
@@ -64,7 +70,7 @@ which will be stored at `0x2410` is 0x3.
 
 My answer (hex): `aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa0300`
 
-### Cusco
+### Cusco (25)
 
 Yet again we can overflow the input. Right at the end of `login`, immediately
 before the `ret`, the stack is pushed ahead 16 bytes: `add #0x10, sp`.  `ret`,
@@ -76,7 +82,7 @@ just put the address of the `unlock_door` function (`0x4446`) there and voila.
 
 My answer (hex): `aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa4644`
 
-### Reykjavik
+### Reykjavik (35)
 
 This one was interesting.  Only interesting function in the disassembly is
 `enc`.  `main` calls `enc`, then calls whatever is at `0x2400`.  I grabbed the
@@ -92,7 +98,51 @@ So this time it's a very secure two byte password.
 
 My answer (hex): `7781`
 
-### Johannesburg
+### Johannesburg (20)
 
-### Whitehorse
+This one took me hours and hours, despite it being almost trivial.  Lesson: look at
+the WHOLE program, don't assume the exploit will be in a particular place just
+because it was in previous levels.  With blinders off you'll notice code at the
+end of `login` that checks the length of the entered password and outputs a
+"too long" message if the password was too long.  It does this by checking for
+a sentinel value (`0xc8`) in memory that ends up overwritten if the password is too
+long `cmp.b #0xc8, 0x11(sp)`.  This might be ok except that:
+
+* the program always reads 63 (`0x3f`) bytes of user input (`mov #0x3f, r14` in
+  `login`)
+* the program then copies what was read using `strcpy` to a "sensitive" part
+  of memory near the stack pointer assuming it won't exceed 16 bytes
+* `strcpy` will copy any size of bytes, assuming they're a null-terminated
+  string
+
+This means we can craft a password to manipulate what is on the stack after the
+"too long" message is printed. If the password length check succeeds it moves
+the stack pointer to the word right after the sentinel value (i.e. the 19th and
+20th bytes of input) and executes `ret`.  So you enter a 20 byte password where
+byte 17 is the sentinel `0xc8` and bytes 19 and 20 are the address of the
+`unlock_door` function.
+
+My answer (hex): `aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaac84644`
+
+### Whitehorse (50)
+
+Once again, the program reads too much input.  This time they read 48 bytes
+(`mov #0x30, r14` in `login`).  This is notable since after a failed password
+the stack is advanced 16 bytes from where the password starts, and `ret` is
+executed.  So once again we take control of the program counter by writing
+whatever return address we want onto the stack.  The twist here is that there's
+no unlock function to jump to.  What we can do, however, is "return" to the
+address of where our password is stored.  Then we just encode instructions to
+open the lock in our password.  I supposed this is "arbitrary code execution".
+Reading the manual we can see that interrupt `0x7f` will open the lock, so we
+encode the following into our password, using the handy
+[assembler](https://microcorruption.com/assembler):
+
+  push #0x7f
+  call #0x4532 ; The address of the INT function
+
+This assembles to `30127f00b0123245`, and the password is stored at `0x3c56`.
+Combine these for the answer:
+
+My answer (hex): `30127f00b01232450000000000000000563c`
 
