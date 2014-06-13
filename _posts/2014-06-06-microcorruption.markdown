@@ -138,11 +138,39 @@ Reading the manual we can see that interrupt `0x7f` will open the lock, so we
 encode the following into our password, using the handy
 [assembler](https://microcorruption.com/assembler):
 
-  push #0x7f
-  call #0x4532 ; The address of the INT function
+    push #0x7f
+    call #0x4532 ; The address of the INT function
 
 This assembles to `30127f00b0123245`, and the password is stored at `0x3c56`.
 Combine these for the answer:
 
 My answer (hex): `30127f00b01232450000000000000000563c`
+
+### Montevideo (50)
+
+This one is very similar to Whitehorse: we can get control of the program
+counter in exactly the same way.  The trick here is that our input is
+`strcpy`'d from its original location in memory to another place, with the
+original being zero'd out. This means our crafted password cannot contain any
+zero bytes (`0x0`), since they indicate the end of the string.  In Whitehorse
+we wrote some code that assembled to `30127f00b0123245`, which has `00` in it,
+and won't do.  The `00` is part of the word identifying the interrupt we want to
+call: `0x007f`.  Instead of passing it as a literal, I found two
+non-`00`-containing words that add up to `0x007f`, and include some code to add
+them.  e.g.
+
+    mov #0xeeff, r15
+    add #0x1180, r15  ; 0xeeff + 0x1180 == 0x007f
+    push r15
+    call #0x454c      ; Address of INT function
+
+Assembled, this gives us: `3f40ffee3f5080110f12b0124c45`.  We also note (by
+looking at memory) that the password will be stored at `0x43ee`, leading to
+this solution:
+
+My answer (hex): `3f40ffee3f5080110f12b0124c45aaaaee43`
+
+### Santa Cruz (50)
+
+### Addis Ababa (50)
 
