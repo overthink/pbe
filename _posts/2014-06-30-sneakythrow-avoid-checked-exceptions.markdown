@@ -1,12 +1,12 @@
 ---
 layout: post
-title: sneakyThrow and throwing checked exceptions as unchecked
-published: false
+
+title: sneakyThrow()&#58; Checked Exceptions as Unchecked
+published: true
 ---
 
-I recently came across some [crazy code in Square's
-Okio](https://github.com/square/okio/blob/c200cb65ddf37fc4d11c01205ae1dd1eaf5f1136/okio/src/main/java/okio/Util.java#L64).
-Here it is for easy reference:
+I recently came across some [suspicious code in Square's
+Okio](https://github.com/square/okio/blob/c200cb65ddf37fc4d11c01205ae1dd1eaf5f1136/okio/src/main/java/okio/Util.java#L64):
 
 {% highlight java %}
 final class Util {
@@ -28,16 +28,14 @@ final class Util {
 
 Their comment admits it's nuts, and points to [Java
 Puzzlers](http://www.amazon.com/Java%C2%BF-Puzzlers-Traps-Pitfalls-Corner/dp/032133678X),
-which I wasn't aware of.  Apparently I'm out of it since this has been around
+which I wasn't aware of.  Apparently I'm out of touch since this has been around
 since 2005, and the technique is used in many open source libraries (search
 around).
 
-I had two questions: 1) how does this work, and 2) why would you ever do this?
+I had two questions: 1) how does this work (!?), and 2) why would you ever do this?
 Checked exceptions are a huge pain, but outright circumvention seems extreme.
 
-After some study, the idea behind this code seems to be to make it possible to
-throw any `Throwable` without declaring a `Throws` clause in the method
-declaration.  Some exprimentation made it more clear.
+Here's some code illustrating what `sneakyRethrow` allows one to do:
 
 {% highlight java %}
 import java.io.IOException;
@@ -59,12 +57,14 @@ class Test {
     throw (Error) t;
   }
 
-  public static void test1() {  // note: no Throws declaration!
+  // note: IOException is checked, but no Throws declaration
+  public static void test1() {
     System.out.println("sneakyRethrow");
     sneakyRethrow(new IOException("foo"));
   }
 
-  public static void test2() {  // note: no Throws declaration!
+  // note: IOException is checked, still no Throws declaration
+  public static void test2() {
     System.out.println("doesntWork");
     doesntWork(new IOException("foo"));
   }
@@ -80,32 +80,36 @@ class Test {
     } catch (Exception e) {
       System.out.println("Caught: " + e);
     }
+    System.out.println("done");
   }
 }
 {% endhighlight %}
 
-This compiles, but the `throw (Error) t;` line in `doesntWork` doesn't work for
-most cases.  There's no guarantee you can cast an arbitrary `Throwable` to
-`Error`.  Running the code demonstrates this:
-
-  sneakyRethrow
-  Caught: java.io.IOException: foo
-  doesntWork
-  Caught: java.lang.ClassCastException: java.io.IOException cannot be cast to java.lang.Error
-
-Here is Java's exception class hierarchy, pinched from
+This compiles, but the downcast `throw (Error) t;` line in `doesntWork` isn't
+safe for most cases.  There's no guarantee you can cast an arbitrary
+`Throwable` to `Error`.  Here is Java's exception class hierarchy, pinched from
 [here](http://www.javamex.com/tutorials/exceptions/exceptions_hierarchy.shtml),
-with '''unchecked''' exceptions in red:
+with __unchecked__ exceptions in red:
 
 ![Java's exception hierarchy](/img/java-exception-hierarchy.png "Java's exception hierarchy")
 
+Running the code demonstrates the problem with the naive `doesntWork`, and also
+shows `sneakyRethrow` doing its thing:
+
+    sneakyRethrow
+    Caught: java.io.IOException: foo
+    doesntWork
+    Caught: java.lang.ClassCastException: java.io.IOException cannot be cast to java.lang.Error
+    done
+
 At this point I still didn't know how this was possible.  I read the relevant
 section of Java Puzzlers, but it didn't really explain the full details of the
-hack, imo.  One important thing it did make me aware of was this: '''checked
-exceptions are only part of Java, not the JVM'''.  They're only enforced by the
+hack, imo.  One important thing it did make me aware of was this: __checked
+exceptions are only part of Java, not the JVM__.  They're only enforced by the
 compiler.  In bytecode you can happily throw any exception from anywhere,
-without restrictions.  Time to look at the bytecode.  Here are the relevant bits (`javap -c Test`):
+without restrictions.  Time to look at the bytecode (via `javap -c Test`):
 
+{% highlight java %}
     public static <T extends java/lang/Throwable> void sneakyRethrow2(java.lang.Throwable) throws T;
       Code:
          0: aload_0
@@ -122,22 +126,66 @@ without restrictions.  Time to look at the bytecode.  Here are the relevant bits
          0: aload_0
          1: checkcast     #3                  // class java/lang/Error
          4: athrow
+{% endhighlight %}
 
-Looking at this bytecode it's obvious why `doesntWork` gets a
-`ClassCastException` but `sneakyRethrow` doesn't.  There's no `checkcast`
-operation in the `sneakyRethrow` code path.  How is this possible?
-`sneakyThrow2` "clearly" casts the `Throwable` to `T` (which should be `Error`)
-in this line:  `throw (T) t;`.  Then I clued in.  Another compiler-only feature
-is being exploited here: generics.  At runtime all the generic type information
-is "erased" -- it's not in the bytecode.  So `throw (T) t;` effectively becomes `throw t;`, and the
-resulting bytecode shows this.  Contrast this with `doesntWork` where I've
-explicitly cast the `Throwable` to `Error`.  Nothing is erased and we get bytecode with the
-`checkcast` that leads to our `ClassCastException`.
+Looking at this bytecode it's obvious why `doesntWork` causes a
+`ClassCastException` but `sneakyRethrow` doesn't: there's no `checkcast`
+instruction in the `sneakyRethrow` code path.  How is this possible?
+`sneakyThrow2` "clearly" casts the `Throwable` to `T` (which is `Error`) in
+this line:  `throw (T) t;`.  Then I clued in.  Another compiler-only feature is
+being exploited here: generics.  At runtime all the generic type information is
+"erased" -- it's not in the bytecode.  So `throw (T) t;` effectively becomes
+`throw t;` (no cast), and the resulting bytecode shows this.  Contrast this
+with `doesntWork` where I've had to explicitly cast the `Throwable` to `Error`.
+Nothing is erased and we get bytecode with the `checkcast` that leads to our
+`ClassCastException`.
 
-## tl;dr
+Now, when would be a good time to use `sneakyRethrow`?  For the most part you
+don't want to use it.  Don't use it.  You agreed to use Java, pay the tax and
+do the right thing with checked exceptions.  Ok, this code still exists though,
+so people are using it for something.  The one use case where `sneakyRethrow`
+seems to be accepted is when you catch `Throwable` (i.e. the most generic type
+of exception), do a bit of cleanup, then want to rethrow the `Throwable` as its
+most specific type.  It's well explained in this [Android platform
+code](https://android.googlesource.com/platform/libcore/+/jb-mr2-release/luni/src/main/java/libcore/util/SneakyThrow.java).
+I'll reproduce here for posterity:
 
-* checked exceptions are only checked in the compiler, the JVM doesn't care, you can throw anything
-* type parameters are compiler-only too, there is no trace of them in the bytecode
-* you can use type parameters in `throws` clauses when declaraing methods
-* combine all of these for a cool hack
+{% highlight java %}
+// The following code must enumerate several types to rethrow:
+public void close() throws IOException {
+    Throwable thrown = null;
+    ...
+    if (thrown != null) {
+        if (thrown instanceof IOException) {
+            throw (IOException) thrown;
+        } else if (thrown instanceof RuntimeException) {
+            throw (RuntimeException) thrown;
+        } else if (thrown instanceof Error) {
+            throw (Error) thrown;
+        } else {
+            throw new AssertionError();
+        }
+    }
+}
+
+// With SneakyThrow, rethrowing is easier:
+public void close() throws IOException {
+    Throwable thrown = null;
+    ...
+    if (thrown != null) {
+        SneakyThrow.sneakyThrow(thrown);
+    }
+}
+{% endhighlight %}
+
+So, like the comment in Okio says, using this in cleanup code is pretty
+convenient.  Neat hack.
+
+## Summary
+
+* checked exceptions are only checked by the compiler, the JVM allows throwing any Throwable at any time
+* type parameters are compiler-only too, there is no trace of them in the bytecode (erasure)
+* combine these things to defeat the compiler and get the bytecode you want
+* never use the resulting code
+* ok, use it carefully in cleanup situations (e.g. after catching a Throwable)
 
