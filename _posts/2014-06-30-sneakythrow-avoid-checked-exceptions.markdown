@@ -140,13 +140,13 @@ with `doesntWork` where I've had to explicitly cast the `Throwable` to `Error`.
 Nothing is erased and we get bytecode with the `checkcast` that leads to our
 `ClassCastException`.
 
-Now, when would be a good time to use `sneakyRethrow`?  For the most part you
-don't want to use it.  Don't use it.  You agreed to use Java, pay the tax and
-do the right thing with checked exceptions.  Ok, this code still exists though,
-so people are using it for something.  The one use case where `sneakyRethrow`
-seems to be accepted is when you catch `Throwable` (i.e. the most generic type
-of exception), do a bit of cleanup, then want to rethrow the `Throwable` as its
-most specific type.  It's well explained in this [Android platform
+Now, when would be a good time to use `sneakyRethrow`?  Don't use it!  You
+agreed to use Java, pay the tax and do the right thing with checked exceptions.
+But then why has this code shown up in various respected Java projects?  The
+one use case where `sneakyRethrow` seems to be accepted is when you catch
+`Throwable` (i.e. the most generic type of exception), do a bit of cleanup,
+then want to rethrow the `Throwable` as its most specific type.  It's well
+explained in this [Android platform
 code](https://android.googlesource.com/platform/libcore/+/jb-mr2-release/luni/src/main/java/libcore/util/SneakyThrow.java).
 I'll reproduce here for posterity:
 
