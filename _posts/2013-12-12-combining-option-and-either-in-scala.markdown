@@ -1,6 +1,7 @@
 ---
 layout: post
 title: Combining Option and Either in Scala
+description: Using Either in for comprehensions in Scala.
 ---
 
 My last post on [nested if-let in Clojure]({% post_url 2013-12-02-nested-if-let-in-clojure %})

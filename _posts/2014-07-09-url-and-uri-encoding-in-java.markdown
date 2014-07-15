@@ -2,6 +2,7 @@
 layout: post
 
 title: URL Encoding, Percent-Encoding and Query Strings in Java
+description: Refresher on the gory details of correct URL encoding in Java.
 published: true
 ---
 

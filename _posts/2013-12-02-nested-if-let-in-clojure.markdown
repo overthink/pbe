@@ -1,6 +1,7 @@
 ---
 layout: post
 title: Nested if-let in Clojure
+description: How to handle nested if-let calls cleanly in Clojure.
 ---
 
 At work today some code turned up that looked like this:

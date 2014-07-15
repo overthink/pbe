@@ -2,6 +2,7 @@
 layout: post
 
 title: sneakyThrow()&#58; Checked Exceptions as Unchecked
+description: How sneakyThrow() is used to throw checked exceptions as unchecked in Java.
 published: true
 ---
 

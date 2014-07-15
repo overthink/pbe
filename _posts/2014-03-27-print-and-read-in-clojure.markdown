@@ -1,6 +1,7 @@
 ---
 layout: post
 title: Print and read in Clojure
+description: Serializing forms safely with print and read in Clojure.
 ---
 
 I recently had a situation where I needed a very light-weight cache for some
